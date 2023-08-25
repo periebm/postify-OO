@@ -10,6 +10,14 @@ export class MediasRepository {
     return this.prisma.medias.create({ data });
   }
 
+  findExistingCombination(body: CreateMediaDto) {
+    return this.prisma.medias.findFirst({
+      where: {
+        AND: { username: body.username, title: body.title },
+      },
+    });
+  }
+
   findAll() {
     return this.prisma.medias.findMany({
       select: {
