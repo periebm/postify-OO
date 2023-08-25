@@ -1,14 +1,19 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { MediasRepository } from './medias.repository';
+import { PublicationsRepository } from '../publications/publications.repository';
 
 @Injectable()
 export class MediasService {
-  constructor(private readonly repository: MediasRepository) {}
+  constructor(
+    private readonly repository: MediasRepository,
+    private readonly publicationRep: PublicationsRepository,
+  ) {}
 
   async createMedia(body: CreateMediaDto) {
     await this.searchForCombination(body);
@@ -35,11 +40,12 @@ export class MediasService {
 
   async remove(id: number) {
     await this.searchForMedia(id);
+    await this.searchForMediaInPublications(id);
 
     return await this.repository.remove(id);
   }
 
-  private async searchForMedia(id: number) {
+  async searchForMedia(id: number) {
     const media = await this.repository.findOne(id);
     if (!media) throw new NotFoundException();
 
@@ -49,5 +55,10 @@ export class MediasService {
   private async searchForCombination(body: CreateMediaDto) {
     const combination = await this.repository.findExistingCombination(body);
     if (combination) throw new ConflictException();
+  }
+
+  private async searchForMediaInPublications(id: number) {
+    const media = await this.publicationRep.findMediaById(id);
+    if (media) throw new ForbiddenException();
   }
 }
